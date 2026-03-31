@@ -15,15 +15,20 @@
             :class="{ active: viewMode === mode }"
             @click="viewMode = mode"
           >
-            {{ { graph: '图谱', split: '双栏', workbench: '工作台' }[mode] }}
+            {{ $t(`main.${mode}`) }}
           </button>
         </div>
       </div>
 
       <div class="header-right">
+        <select v-model="$i18n.locale" class="lang-switcher">
+          <option value="vi">Tiếng Việt</option>
+          <option value="en">English</option>
+          <option value="zh">中文</option>
+        </select>
         <div class="workflow-step">
-          <span class="step-num">Step 5/5</span>
-          <span class="step-name">深度互动</span>
+          <span class="step-num">{{ $t('main.step') }} 5/5</span>
+          <span class="step-name">{{ $t('main.steps.step5') }}</span>
         </div>
         <div class="step-divider"></div>
         <span class="status-indicator" :class="statusClass">
@@ -64,12 +69,14 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import GraphPanel from '../components/GraphPanel.vue'
 import Step5Interaction from '../components/Step5Interaction.vue'
 import { getProject, getGraphData } from '../api/graph'
 import { getSimulation } from '../api/simulation'
 import { getReport } from '../api/report'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 
@@ -109,10 +116,10 @@ const statusClass = computed(() => {
 })
 
 const statusText = computed(() => {
-  if (currentStatus.value === 'error') return 'Error'
-  if (currentStatus.value === 'completed') return 'Completed'
-  if (currentStatus.value === 'processing') return 'Processing'
-  return 'Ready'
+  if (currentStatus.value === 'error') return t('simulation.status.error')
+  if (currentStatus.value === 'completed') return t('simulation.status.completed')
+  if (currentStatus.value === 'processing') return t('simulation.status.processing')
+  return t('simulation.status.ready')
 })
 
 // --- Helpers ---
@@ -140,7 +147,7 @@ const toggleMaximize = (target) => {
 // --- Data Logic ---
 const loadReportData = async () => {
   try {
-    addLog(`加载报告数据: ${currentReportId.value}`)
+    addLog(t('simulation_view.load_report_data', { id: currentReportId.value }))
     
     // 获取 report 信息以获取 simulation_id
     const reportRes = await getReport(currentReportId.value)
@@ -159,7 +166,7 @@ const loadReportData = async () => {
             const projRes = await getProject(simData.project_id)
             if (projRes.success && projRes.data) {
               projectData.value = projRes.data
-              addLog(`项目加载成功: ${projRes.data.project_id}`)
+              addLog(t('simulation_view.project_success', { id: projRes.data.project_id }))
               
               // 获取 graph 数据
               if (projRes.data.graph_id) {
@@ -170,10 +177,10 @@ const loadReportData = async () => {
         }
       }
     } else {
-      addLog(`获取报告信息失败: ${reportRes.error || '未知错误'}`)
+      addLog(`${t('simulation_view.report_fail')}: ${reportRes.error || t('common.unknown_error')}`)
     }
   } catch (err) {
-    addLog(`加载异常: ${err.message}`)
+    addLog(`${t('common.unknown_error')}: ${err.message}`)
   }
 }
 
@@ -184,10 +191,10 @@ const loadGraph = async (graphId) => {
     const res = await getGraphData(graphId)
     if (res.success) {
       graphData.value = res.data
-      addLog('图谱数据加载成功')
+      addLog(t('simulation_view.graph_success'))
     }
   } catch (err) {
-    addLog(`图谱加载失败: ${err.message}`)
+    addLog(`${t('simulation_view.graph_success')} ${t('common.failed')}: ${err.message}`)
   } finally {
     graphLoading.value = false
   }
@@ -208,7 +215,7 @@ watch(() => route.params.reportId, (newId) => {
 }, { immediate: true })
 
 onMounted(() => {
-  addLog('InteractionView 初始化')
+  addLog(t('simulation_view.interaction_init'))
   loadReportData()
 })
 </script>
@@ -346,5 +353,15 @@ onMounted(() => {
 
 .panel-wrapper.left {
   border-right: 1px solid #EAEAEA;
+}
+
+.lang-switcher {
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
 }
 </style>
